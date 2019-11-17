@@ -23,20 +23,20 @@ const defaults = {
   region: 'us-east-1'
 }
 
-const setTableName = (component, inputs, config) => {
-  const generatedName = inputs.name || component.context.resourceId()
+const setTableName = (inputs) => {
+  const generatedName = inputs.name || this.context.resourceId()
   const NO_CONTENT = 204
   const lastDeployHadNoNameDefined = this.state.nameInput === NO_CONTENT
   const lastDeployHadNameDefined = this.state.nameInput !== NO_CONTENT
   const givenNameHasNotChanged = lastDeployHadNameDefined && this.state.nameInput === inputs.name
   const bothLastAndCurrentDeployHaveNoNameDefined = lastDeployHadNoNameDefined && !inputs.name
-
-  config.name =
-    this.state.nameInput && (givenNameHasNotChanged || bothLastAndCurrentDeployHaveNoNameDefined)
+  const name = this.state.nameInput && (givenNameHasNotChanged || bothLastAndCurrentDeployHaveNoNameDefined)
       ? this.state.name
-      : generatedName
+      : generatedName;
+  
+  this.state.nameInput = inputs.name || NO_CONTENT
 
-  component.state.nameInput = inputs.name || NO_CONTENT
+  return name;
 }
 
 class AwsDynamoDb extends Component {
@@ -53,11 +53,8 @@ class AwsDynamoDb extends Component {
       credentials: this.context.credentials.aws
     })
 
-    this.context.debug(
-      `Checking if table ${config.name} already exists in the ${config.region} region.`
-    )
-
-    setTableName(this, inputs, config)
+    this.context.debug(`Checking if table ${config.name} already exists in the ${config.region} region.`)
+    config.name = setTableName.call(this, inputs)
 
     const prevTable = await describeTable({ dynamodb, name: this.state.name })
 
